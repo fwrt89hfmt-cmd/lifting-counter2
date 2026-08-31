@@ -1,0 +1,32 @@
+<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0A84FF">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>리프팅 카운터</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:420px;margin:30px auto;padding:16px;text-align:center}
+button{width:100%;padding:18px;margin:8px 0;font-size:1.2rem;border:none;border-radius:14px}
+.g{background:#34C759;color:#fff}.r{background:#FF3B30;color:#fff}.b{background:#0A84FF;color:#fff}.x{background:#8E8E93;color:#fff}
+.rate{font-size:1.5rem;font-weight:bold;margin:14px 0}
+</style></head><body>
+<h1>⚽ 리프팅 카운터</h1>
+<div>성공 <span id=s>0</span> | 실패 <span id=f>0</span> | 총 <span id=t>0</span></div>
+<div class=rate>성공률 <span id=p>0.0%</span></div>
+<button class=g onclick="rec(1)">✅ 성공</button>
+<button class=r onclick="rec(0)">❌ 실패</button>
+<button class=b onclick="undo()">↩️ 실행 취소</button>
+<button class=x onclick="resetAll()">🔄 초기화</button>
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js')}
+let s=0,f=0,h=[];
+const k='liftpwa';
+function load(){let d=localStorage.getItem(k);if(d){d=JSON.parse(d);s=d.s||0;f=d.f||0;h=d.h||[]}}
+function save(){localStorage.setItem(k,JSON.stringify({s,f,h}))}
+function up(){let t=s+f;S('s',s);S('f',f);S('t',t);S('p',((t?s/t*100:0).toFixed(1))+'%');save()}
+function S(i,v){document.getElementById(i).textContent=v}
+function rec(ok){h.push(ok);ok?s++:f++;up();if(navigator.vibrate)navigator.vibrate(20)}
+function undo(){if(!h.length)return;let x=h.pop();x?s--:f--;up()}
+function resetAll(){if(confirm('초기화할까요?')){s=f=0;h=[];up()}}
+load();up();
+</script></body></html>
