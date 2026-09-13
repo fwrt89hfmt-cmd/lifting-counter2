@@ -10,51 +10,50 @@ h1{font-size:25px;margin:8px 0 4px}.sub{color:#777;font-size:14px;margin-bottom:
 .card{background:white;border-radius:20px;padding:18px;margin:12px 0;box-shadow:0 2px 12px #0000000f}
 .progress-title{display:flex;justify-content:space-between;color:#666;font-size:14px}.progress-num{font-size:36px;font-weight:800;margin:8px 0}
 .bar{height:12px;background:#e5e5ea;border-radius:99px;overflow:hidden}.bar>div{height:100%;background:#0A84FF;width:0%;transition:.2s}
-.avg{display:flex;justify-content:space-between;margin-top:14px}.avg strong{font-size:22px}
-label{display:block;color:#666;font-size:14px;margin-bottom:8px}
-input{width:100%;font-size:30px;font-weight:700;text-align:center;border:1px solid #ddd;border-radius:14px;padding:12px;background:#fafafa}
-button{border:0;border-radius:14px;padding:15px;font-size:17px;font-weight:700;width:100%;margin-top:10px}
-.record{background:#0A84FF;color:white}.undo{background:#e5e5ea}.reset{background:#ff3b30;color:white}
-.small{font-size:13px;color:#777;text-align:center;margin-top:10px}h2{font-size:18px;margin:2px 0 14px}
-canvas{width:100%;height:210px;display:block}.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
-.row:last-child{border:0}.complete{font-weight:700}.empty{text-align:center;color:#888;padding:25px 0}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.stat{background:#f5f5f7;border-radius:14px;padding:12px}.stat span{display:block;color:#666;font-size:13px}.stat strong{display:block;font-size:21px;margin-top:4px}
+.current{text-align:center;background:#f5f5f7;border-radius:16px;padding:15px;margin-bottom:12px}.current .num{font-size:44px;font-weight:800;line-height:1.05}.current .unit{color:#777;font-size:14px;margin-top:4px}
+.buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.add{background:#e5e5ea;font-size:20px;padding:13px;margin-top:0}.record{background:#0A84FF;color:white}.cancel{background:#e5e5ea}.undo{background:#e5e5ea}.reset{background:#ff3b30;color:white}
+button{border:0;border-radius:14px;padding:15px;font-size:17px;font-weight:700;width:100%;margin-top:10px}.small{font-size:13px;color:#777;text-align:center;margin-top:10px}h2{font-size:18px;margin:2px 0 14px}
+canvas{width:100%;height:230px;display:block}.legend{display:flex;gap:16px;justify-content:center;color:#666;font-size:12px;margin-top:-2px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#0A84FF;margin-right:4px}.dot.best{background:#555}
+.row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #eee;font-size:14px}.row:last-child{border:0}.complete{font-weight:700}.empty{text-align:center;color:#888;padding:25px 0}
 </style></head><body>
 <h1>⚽ 리프팅 기록</h1><div class="sub" id="dateText"></div>
 <div class="card"><div class="progress-title"><span>오늘 누적</span><span>목표 500개</span></div>
 <div class="progress-num"><span id="total">0</span><span style="font-size:20px;color:#888"> / 500</span></div>
-<div class="bar"><div id="bar"></div></div><div class="avg"><span>현재 평균</span><strong id="avg">0.0개</strong></div></div>
-<div class="card"><label for="count">이번 시도에서 성공한 리프팅 개수</label>
-<input id="count" type="number" inputmode="numeric" min="1" step="1" placeholder="0">
-<button class="record" onclick="record()">기록하기</button><button class="undo" onclick="undo()">↩️ 실행 취소</button>
-<div class="small">한 번의 시도가 끝날 때마다 개수를 입력하고 기록하세요.</div></div>
-<div class="card"><h2>📈 하루 평균 성장세</h2><canvas id="chart"></canvas><div id="history"></div></div>
-<div class="card"><button class="reset" onclick="resetAll()">🔄 오늘 기록 초기화</button>
+<div class="bar"><div id="bar"></div></div>
+<div class="stats"><div class="stat"><span>현재 평균</span><strong id="avg">0.0개</strong></div><div class="stat"><span>오늘 최고기록</span><strong id="best">0개</strong></div></div></div>
+<div class="card"><label>이번 시도</label><div class="current"><div class="num" id="current">0</div><div class="unit">리프팅</div></div>
+<div class="buttons"><button class="add" onclick="add(10)">+10</button><button class="add" onclick="add(5)">+5</button><button class="add" onclick="add(1)">+1</button></div>
+<button class="cancel" onclick="cancelCurrent()">↩ 현재 시도 취소</button>
+<button class="record" onclick="record()">이 시도 기록하기</button>
+<div class="small">실패하기 전까지 한 번에 성공한 개수를 +10, +5, +1로 입력하세요.</div></div>
+<div class="card"><h2>📈 하루 기록 성장세</h2><canvas id="chart"></canvas><div class="legend"><span><i class="dot"></i>평균</span><span><i class="dot best"></i>최고기록</span></div><div id="history"></div></div>
+<div class="card"><button class="undo" onclick="undo()">↩️ 마지막 기록 실행 취소</button><button class="reset" onclick="resetAll()">🔄 오늘 기록 초기화</button>
 <div class="small">기록은 이 기기에 자동 저장됩니다.</div></div>
 <script>
-const KEY="lifting-counter-v2";let data={days:{}};
+const KEY="lifting-counter-v3";const OLD_KEY="lifting-counter-v2";let data={days:{},current:0};
 const $=x=>document.getElementById(x);
 function today(){let d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
-function load(){try{let x=localStorage.getItem(KEY);if(x)data=JSON.parse(x)}catch(e){}}
+function load(){try{let x=localStorage.getItem(KEY);if(x){data=JSON.parse(x);data.days=data.days||{};data.current=Number(data.current)||0;return}let old=localStorage.getItem(OLD_KEY);if(old){data=JSON.parse(old);data.days=data.days||{};data.current=0;Object.values(data.days).forEach(d=>{d.attempts=d.attempts||[];d.best=d.attempts.length?Math.max(...d.attempts):0});save()}}catch(e){data={days:{},current:0}}}
 function save(){localStorage.setItem(KEY,JSON.stringify(data))}
-function day(){let k=today();if(!data.days[k])data.days[k]={attempts:[],complete:false};return data.days[k]}
+function day(){let k=today();if(!data.days[k])data.days[k]={attempts:[],complete:false,best:0};let d=data.days[k];d.attempts=d.attempts||[];d.best=d.attempts.length?Math.max(...d.attempts):0;return d}
 function total(d){return d.attempts.reduce((a,b)=>a+b,0)}
 function average(d){return d.attempts.length?total(d)/d.attempts.length:0}
-function record(){let n=Math.floor(Number($("count").value));if(!Number.isFinite(n)||n<1){$("count").focus();return}
-let d=day();if(d.complete){alert("오늘 500개를 완료했어요!");return}d.attempts.push(n);if(total(d)>=500)d.complete=true;save();render();$("count").value="";$("count").focus()}
-function undo(){let d=day();if(!d.attempts.length){alert("되돌릴 기록이 없습니다.");return}d.attempts.pop();d.complete=false;save();render()}
-function resetAll(){if(confirm("오늘 기록을 초기화할까요?")){delete data.days[today()];save();render()}}
+function add(n){let d=day();if(d.complete){alert("오늘 500개를 완료했어요!");return}data.current=(Number(data.current)||0)+n;save();render()}
+function cancelCurrent(){if(!data.current){return}data.current=0;save();render()}
+function record(){let n=Math.floor(Number(data.current));if(!Number.isFinite(n)||n<1)return;let d=day();if(d.complete){alert("오늘 500개를 완료했어요!");return}d.attempts.push(n);d.best=Math.max(d.best||0,n);if(total(d)>=500)d.complete=true;data.current=0;save();render()}
+function undo(){let d=day();if(!d.attempts.length){alert("되돌릴 기록이 없습니다.");return}d.attempts.pop();d.best=d.attempts.length?Math.max(...d.attempts):0;d.complete=total(d)>=500;data.current=0;save();render()}
+function resetAll(){if(confirm("오늘 기록을 초기화할까요?")){delete data.days[today()];data.current=0;save();render()}}
 function completed(){return Object.entries(data.days).filter(([k,d])=>d.complete&&d.attempts.length).sort((a,b)=>a[0].localeCompare(b[0]))}
-function render(){let d=day(),t=total(d);$("dateText").textContent=today().replaceAll("-",".")+" 기록";$("total").textContent=t;
-$("bar").style.width=Math.min(t/500*100,100)+"%";$("avg").textContent=average(d).toFixed(1)+"개";draw();history()}
-function history(){let a=completed().slice().reverse();$("history").innerHTML=a.length?a.map(([k,d])=>`<div class="row"><span>${k.replaceAll("-",".")}</span><span class="complete">${average(d).toFixed(1)}개 평균 · ${total(d)}개</span></div>`).join(""):'<div class="empty">500개를 완료한 날의 평균이 여기에 쌓여요.</div>'}
-function draw(){let c=$("chart"),ctx=c.getContext("2d"),w=c.clientWidth,h=210,r=devicePixelRatio||1;c.width=w*r;c.height=h*r;ctx.setTransform(r,0,0,r,0,0);ctx.clearRect(0,0,w,h);
-let p=completed().map(([k,d])=>({k,v:average(d)}));if(!p.length){ctx.fillStyle="#888";ctx.font="14px sans-serif";ctx.textAlign="center";ctx.fillText("500개 완료 기록이 생기면 그래프가 나타나요.",w/2,105);return}
-let pad={l:42,r:12,t:18,b:34},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b,max=Math.max(...p.map(x=>x.v),1),min=Math.min(...p.map(x=>x.v),0),range=max-min||1;
+function render(){let d=day(),t=total(d);$("dateText").textContent=today().replaceAll("-",".")+" 기록";$("total").textContent=t;$("bar").style.width=Math.min(t/500*100,100)+"%";$("avg").textContent=average(d).toFixed(1)+"개";$("best").textContent=(d.best||0)+"개";$("current").textContent=data.current||0;draw();history()}
+function history(){let a=completed().slice().reverse();$("history").innerHTML=a.length?a.map(([k,d])=>`<div class="row"><span>${k.replaceAll("-",".")}</span><span class="complete">평균 ${average(d).toFixed(1)}개 · 최고 ${d.best||0}개</span></div>`).join(""):"<div class=\"empty\">500개를 완료한 날의 평균과 최고기록이 여기에 쌓여요.</div>"}
+function draw(){let c=$("chart"),ctx=c.getContext("2d"),w=c.clientWidth,h=230,r=devicePixelRatio||1;c.width=w*r;c.height=h*r;ctx.setTransform(r,0,0,r,0,0);ctx.clearRect(0,0,w,h);
+let p=completed().map(([k,d])=>({k,v:average(d),b:d.best||0}));if(!p.length){ctx.fillStyle="#888";ctx.font="14px sans-serif";ctx.textAlign="center";ctx.fillText("500개 완료 기록이 생기면 그래프가 나타나요.",w/2,115);return}
+let pad={l:42,r:12,t:18,b:34},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b,max=Math.max(...p.map(x=>Math.max(x.v,x.b)),1),min=0,range=max-min||1;
 ctx.strokeStyle="#ddd";for(let i=0;i<4;i++){let y=pad.t+ch*i/3;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke()}
 ctx.fillStyle="#777";ctx.font="11px sans-serif";ctx.textAlign="right";for(let i=0;i<4;i++){let v=max-range*i/3;ctx.fillText(v.toFixed(0),pad.l-7,pad.t+ch*i/3+4)}
 let X=i=>p.length==1?pad.l+cw/2:pad.l+cw*i/(p.length-1),Y=v=>pad.t+ch*(max-v)/range;
-ctx.strokeStyle="#0A84FF";ctx.lineWidth=3;ctx.beginPath();p.forEach((q,i)=>i?ctx.lineTo(X(i),Y(q.v)):ctx.moveTo(X(i),Y(q.v)));ctx.stroke();
-ctx.fillStyle="#0A84FF";p.forEach((q,i)=>{ctx.beginPath();ctx.arc(X(i),Y(q.v),5,0,Math.PI*2);ctx.fill()});
-ctx.fillStyle="#777";ctx.font="10px sans-serif";ctx.textAlign="center";let start=Math.max(0,p.length-6);for(let i=start;i<p.length;i++)ctx.fillText(p[i].k.slice(5).replace("-","."),X(i),195)}
+function line(key,stroke){ctx.strokeStyle=stroke;ctx.lineWidth=3;ctx.beginPath();p.forEach((q,i)=>i?ctx.lineTo(X(i),Y(q[key])):ctx.moveTo(X(i),Y(q[key])));ctx.stroke();ctx.fillStyle=stroke;p.forEach((q,i)=>{ctx.beginPath();ctx.arc(X(i),Y(q[key]),4,0,Math.PI*2);ctx.fill()})}
+line("v","#0A84FF");line("b","#555");ctx.fillStyle="#777";ctx.font="10px sans-serif";ctx.textAlign="center";let start=Math.max(0,p.length-6);for(let i=start;i<p.length;i++)ctx.fillText(p[i].k.slice(5).replace("-","."),X(i),218)}
 load();render();window.addEventListener("resize",draw);if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");
 </script></body></html>
